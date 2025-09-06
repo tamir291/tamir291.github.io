@@ -28,6 +28,8 @@ def get_state():
 @app.route('/api/command', methods=['POST'])
 def handle_command():
     data = request.json
+    print(f"Received command from web: {data}")  # ← Логирование
+    
     x = data.get('x')
     y = data.get('y')
     color = data.get('color')
@@ -38,6 +40,7 @@ def handle_command():
         
         command = f"{x} {y} {color}"
         pending_commands.append(command)
+        print(f"Added to queue: {command}")  # ← Логирование
         
         return jsonify({'status': 'success'})
     
@@ -46,9 +49,14 @@ def handle_command():
 # API для ESP32 - получение команд
 @app.route('/api/commands', methods=['GET'])
 def get_commands():
+    print(f"ESP32 requested commands. Pending: {len(pending_commands)}")  # ← Логирование
+    
     if pending_commands:
         command = pending_commands.pop(0)
+        print(f"Sending to ESP32: {command}")  # ← Логирование
         return jsonify({'command': command})
+    
+    print("No commands for ESP32")  # ← Логирование
     return jsonify({'command': None})
 
 # Сброс поля
@@ -57,7 +65,17 @@ def reset_pixels():
     global pixels, pending_commands
     pixels = {}
     pending_commands = []
+    print("Field reset")  # ← Логирование
     return jsonify({'status': 'reset'})
+
+# Диагностика
+@app.route('/api/debug', methods=['GET'])
+def debug_info():
+    return jsonify({
+        'pending_commands': pending_commands,
+        'pixels_count': len(pixels),
+        'total_commands_processed': len(pending_commands)
+    })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
