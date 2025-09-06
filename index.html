@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Battle Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        h2 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: var(--tg-theme-text-color, #000000);
+        }
+        
+        .color-palette {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 15px 0;
+            justify-content: center;
+        }
+        
+        .color-btn {
+            width: 35px;
+            height: 35px;
+            border: 3px solid transparent;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .color-btn.active {
+            border-color: var(--tg-theme-button-color, #007aff);
+            transform: scale(1.1);
+        }
+        
+        .pixel-grid {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 2px;
+            margin: 0 auto;
+            max-width: 100%;
+        }
+        
+        .pixel {
+            aspect-ratio: 1;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: background-color 0.1s;
+        }
+        
+        .pixel:hover {
+            opacity: 0.8;
+        }
+        
+        .status {
+            text-align: center;
+            margin: 15px 0;
+            font-size: 14px;
+            color: var(--tg-theme-hint-color, #999999);
+        }
+        
+        .user-info {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🎨 Pixel Battle</h2>
+        
+        <div class="user-info" id="userInfo">
+            Загрузка...
+        </div>
+        
+        <div class="color-palette">
+            <div class="color-btn active" style="background: #FF0000;" data-color="FF0000"></div>
+            <div class="color-btn" style="background: #00FF00;" data-color="00FF00"></div>
+            <div class="color-btn" style="background: #0000FF;" data-color="0000FF"></div>
+            <div class="color-btn" style="background: #FFFF00;" data-color="FFFF00"></div>
+            <div class="color-btn" style="background: #FF00FF;" data-color="FF00FF"></div>
+            <div class="color-btn" style="background: #000000;" data-color="000000"></div>
+            <div class="color-btn" style="background: #FFFFFF;" data-color="FFFFFF"></div>
+        </div>
+        
+        <div class="status" id="status">Выбери цвет и нажми на блок</div>
+        
+        <div class="pixel-grid" id="pixelGrid"></div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        let selectedColor = 'FF0000';
+        
+        // Инициализация приложения
+        function initApp() {
+            // Показываем информацию о пользователе
+            if (tg.initDataUnsafe.user) {
+                const user = tg.initDataUnsafe.user;
+                document.getElementById('userInfo').innerHTML = 
+                    `Привет, <b>${user.first_name}</b>! Готов к рисованию 🎨`;
+            }
+            
+            // Инициализация сетки
+            initGrid();
+            
+            // Настройка выбора цвета
+            setupColorPicker();
+            
+            // Расширяем на весь экран
+            tg.expand();
+            tg.ready();
+        }
+        
+        // Создание сетки пикселей
+        function initGrid() {
+            const grid = document.getElementById('pixelGrid');
+            for (let y = 0; y < 10; y++) { // Первые 10 строк для примера
+                for (let x = 0; x < 16; x++) {
+                    const pixel = document.createElement('div');
+                    pixel.className = 'pixel';
+                    pixel.dataset.x = x;
+                    pixel.dataset.y = y;
+                    pixel.addEventListener('click', () => handlePixelClick(x, y));
+                    grid.appendChild(pixel);
+                }
+            }
+        }
+        
+        // Настройка выбора цвета
+        function setupColorPicker() {
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelector('.color-btn.active')?.classList.remove('active');
+                    btn.classList.add('active');
+                    selectedColor = btn.dataset.color;
+                });
+            });
+        }
+        
+        // Обработка клика по пикселю
+        function handlePixelClick(x, y) {
+            const status = document.getElementById('status');
+            status.textContent = `Рисую блок [${x},${y}]...`;
+            
+            // Здесь будет отправка команды на сервер
+            console.log(`Drawing: ${x},${y} with color #${selectedColor}`);
+            
+            // Визуальное подтверждение
+            const pixel = document.querySelector(`.pixel[data-x="${x}"][data-y="${y}"]`);
+            pixel.style.background = '#' + selectedColor;
+            
+            tg.HapticFeedback.impactOccurred('light');
+            
+            setTimeout(() => {
+                status.textContent = 'Готов к рисованию!';
+            }, 1000);
+        }
+        
+        // Запуск при загрузке
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
